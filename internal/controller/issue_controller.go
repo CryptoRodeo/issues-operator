@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 
+	issuesv1beta1 "github.com/CryptoRodeo/issues-operator/pkg/api/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,9 +46,68 @@ type IssueReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.0/pkg/reconcile
 func (r *IssueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	issue := &issuesv1beta1.Issue{}
+	err := r.Get(ctx, req.NamespacedName, issue)
+	if err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	if issue.Labels == nil {
+		issue.Labels = make(map[string]string)
+	}
+
+	// Sync labels with spec fields
+	needsUpdate := false
+
+	// Sync severity
+	if issue.Spec.Severity != "" {
+		if issue.Labels["severity"] != issue.Spec.Severity {
+			issue.Labels["severity"] = issue.Spec.Severity
+			needsUpdate = true
+		}
+	}
+
+	// Sync issueType
+	if issue.Spec.IssueType != "" {
+		if issue.Labels["issueType"] != issue.Spec.IssueType {
+			issue.Labels["issueType"] = issue.Spec.IssueType
+			needsUpdate = true
+		}
+	}
+
+	// Sync resourceType
+	if issue.Spec.Scope.ResourceType != "" {
+		if issue.Labels["resourceType"] != issue.Spec.Scope.ResourceType {
+			issue.Labels["resourceType"] = issue.Spec.Scope.ResourceType
+			needsUpdate = true
+		}
+	}
+
+	// Sync resourceName
+	if issue.Spec.Scope.ResourceName != "" {
+		if issue.Labels["resourceName"] != issue.Spec.Scope.ResourceName {
+			issue.Labels["resourceName"] = issue.Spec.Scope.ResourceName
+			needsUpdate = true
+		}
+	}
+
+	// Sync resourceNamespace
+	if issue.Spec.Scope.ResourceNamespace != "" {
+		if issue.Labels["resourceNamespace"] != issue.Spec.Scope.ResourceNamespace {
+			issue.Labels["resourceNamespace"] = issue.Spec.Scope.ResourceNamespace
+			needsUpdate = true
+		}
+	}
+
+	if needsUpdate {
+		logger.Info("Updating issue labels", "name", issue.Name)
+		if err := r.Update(ctx, issue); err != nil {
+			logger.Error(err, "Failed to update issue labels")
+			return ctrl.Result{}, err
+		}
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -56,6 +116,6 @@ func (r *IssueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 func (r *IssueReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
-		// For().
+		For(&issuesv1beta1.Issue{}).
 		Complete(r)
 }

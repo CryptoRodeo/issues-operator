@@ -25,6 +25,8 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"github.com/CryptoRodeo/issues-operator/internal/controller"
+	issuesv1beta1 "github.com/CryptoRodeo/issues-operator/pkg/api/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -34,8 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	"github.com/CryptoRodeo/issues-operator/internal/controller"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -46,6 +46,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(issuesv1beta1.AddToScheme(scheme))
 
 	// +kubebuilder:scaffold:scheme
 }
