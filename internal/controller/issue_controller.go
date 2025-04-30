@@ -20,12 +20,13 @@ import (
 	"context"
 	"time"
 
-	issuesv1beta1 "github.com/CryptoRodeo/issues-operator/pkg/api/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	issuesv1beta1 "github.com/CryptoRodeo/issues-operator/api/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // IssueReconciler reconciles a Issue object
@@ -145,7 +146,6 @@ func (r *IssueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 // SetupWithManager sets up the controller with the Manager.
 func (r *IssueReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
 		For(&issuesv1beta1.Issue{}).
 		Complete(r)
 }

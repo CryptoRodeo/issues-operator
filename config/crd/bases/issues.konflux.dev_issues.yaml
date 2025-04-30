@@ -1,0 +1,105 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.1
+  name: issues.issues.konflux.dev
+spec:
+  group: issues.konflux.dev
+  names:
+    kind: Issue
+    listKind: IssueList
+    plural: issues
+    singular: issue
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: Issue is the Schema for the issues API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: IssueSpec defines the desired state of Issue
+            properties:
+              description:
+                type: string
+              issueType:
+                type: string
+              links:
+                items:
+                  description: IssueLink provides links to related resources
+                  properties:
+                    title:
+                      type: string
+                    url:
+                      type: string
+                  required:
+                  - title
+                  - url
+                  type: object
+                type: array
+              relatedIssues:
+                items:
+                  type: string
+                type: array
+              scope:
+                properties:
+                  resourceName:
+                    type: string
+                  resourceNamespace:
+                    type: string
+                  resourceType:
+                    type: string
+                required:
+                - resourceName
+                - resourceType
+                type: object
+              severity:
+                type: string
+              title:
+                description: |-
+                  INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file
+                type: string
+            required:
+            - description
+            - issueType
+            - severity
+            - title
+            type: object
+          status:
+            description: IssueStatus defines the observed state of Issue
+            properties:
+              detectedTimestamp:
+                type: string
+              resolvedTimestamp:
+                type: string
+              state:
+                description: |-
+                  INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+                  Important: Run "make" to regenerate code after modifying this file
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

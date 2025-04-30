@@ -28,8 +28,8 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # This variable is used to construct full image tags for bundle and catalog images.
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
-# konflux.dev/issues-operator-bundle:$VERSION and konflux.dev/issues-operator-catalog:$VERSION.
-IMAGE_TAG_BASE ?= konflux.dev/issues-operator
+# konflux.dev/issue-operator-bundle:$VERSION and konflux.dev/issue-operator-catalog:$VERSION.
+IMAGE_TAG_BASE ?= konflux.dev/issue-operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
@@ -65,7 +65,7 @@ endif
 # Be aware that the target commands are only tested with Docker which is
 # scaffolded by default. However, you might want to replace it to use other
 # tools. (i.e. podman)
-CONTAINER_TOOL ?= docker
+CONTAINER_TOOL ?= podman
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -159,10 +159,10 @@ PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
 docker-buildx: ## Build and push docker image for the manager for cross-platform support
 	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
 	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
-	- $(CONTAINER_TOOL) buildx create --name issues-operator-builder
-	$(CONTAINER_TOOL) buildx use issues-operator-builder
+	- $(CONTAINER_TOOL) buildx create --name issue-operator-builder
+	$(CONTAINER_TOOL) buildx use issue-operator-builder
 	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile.cross .
-	- $(CONTAINER_TOOL) buildx rm issues-operator-builder
+	- $(CONTAINER_TOOL) buildx rm issue-operator-builder
 	rm Dockerfile.cross
 
 .PHONY: build-installer

@@ -8,12 +8,16 @@ layout:
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-projectName: issues-operator
+projectName: issue-operator
 repo: github.com/CryptoRodeo/issues-operator
 resources:
-- controller: true
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
   domain: konflux.dev
   group: issues
   kind: Issue
+  path: github.com/CryptoRodeo/issues-operator/api/v1beta1
   version: v1beta1
 version: "3"
