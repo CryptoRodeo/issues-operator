@@ -18,8 +18,10 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	issuesv1beta1 "github.com/CryptoRodeo/issues-operator/pkg/api/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -98,6 +100,34 @@ func (r *IssueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		if issue.Labels["resourceNamespace"] != issue.Spec.Scope.ResourceNamespace {
 			issue.Labels["resourceNamespace"] = issue.Spec.Scope.ResourceNamespace
 			needsUpdate = true
+		}
+	}
+
+	// Sync status
+	statusChanged := false
+	// Check if status has changed at all
+	if stateLabel, exists := issue.Labels["state"]; exists && issue.Status.State != stateLabel {
+		oldState := issue.Status.State
+		issue.Status.State = stateLabel
+		statusChanged = true
+
+		now := metav1.Now().Format(time.RFC3339)
+		if oldState == "resolved" && stateLabel != "resolved" {
+			// If changing from resolved to another state, clear the resolved timestamp
+			issue.Status.ResolvedTimestamp = ""
+		}
+
+		// Always update detected timestamp if it's not set and we're changing status
+		if issue.Status.DetectedTimestamp == "" {
+			issue.Status.DetectedTimestamp = now
+		}
+	}
+
+	if statusChanged {
+		logger.Info("Updating issue status", "name", issue.Name, "state", issue.Status.State)
+		if err := r.Status().Update(ctx, issue); err != nil {
+			logger.Error(err, "Failed to update issue status")
+			return ctrl.Result{}, err
 		}
 	}
 
