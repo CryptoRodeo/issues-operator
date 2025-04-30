@@ -1,8 +1,52 @@
 # issues-operator
-// TODO(user): Add simple overview of use/purpose
+
+:construction: Work In Progress :construction:
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+This is the Kubernetes Issue Operator - a handy tool we're building to help you report problems in your K8s clusters using an Issue CRD.
+
+## Basic Idea
+This is a simple way to track all sorts of cluster issues in one place.
+You can create Issues using monitoring or external services and view those issues in the cluster.
+Those same monitoring systems or external systems can update these issue CRDs.
+
+### Filtering
+The metadata from the issue will get appended to the Issue CRD labels, allowing you to group and filter issues.
+
+For example, say we want all the issues for an application:
+```bash
+kubectl get issues -l 'applicationName=someApp'
+```
+
+now let's filter all issues for a component in that application:
+```bash
+kubectl get issues -l 'applicationName=someApp,componentName=someComponent
+```
+
+now lets get all build issues for a component in that application:
+```bash
+kubectl get issues -l 'applicationName=someApp,componentName=someComponent,issueType=build'
+```
+
+### Grouping
+Get me all the issues related to Components in an Application:
+```bash
+kubectl get issues -l 'applicationName=someApp,resourceType=component'
+```
+
+## Common Use Cases
+The Issue Operator can generate and update issues on many common Kubernetes problems, including:
+
+- **Resource Quota Management**: Get warned when namespaces approach CPU, memory, or storage limits
+- **Certificate Expiration**: Receive alerts before TLS/SSL certificates expire (7, 30, 60 days)
+- **Health Probe Failures**: Know when application health checks are failing
+- **Network Issues**: Detect connectivity problems between services
+- **Configuration Drift**: Get alerted when live cluster state diverges from Git source (ArgoCD/Flux)
+- **Pod Scheduling Issues**: Identify when pods can't schedule due to resource constraints or taints/tolerations
+- **Persistent Volume Problems**: Discover storage issues before they affect applications
+- **API Deprecations**: Get warned about using deprecated Kubernetes APIs
+- **Node Health Issues**: Monitor node conditions like disk pressure or memory pressure
+- **Security Policy Violations**: Detect when workloads violate cluster security policies
 
 ## Getting Started
 
