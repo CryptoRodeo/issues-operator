@@ -48,9 +48,9 @@ type IssueLink struct {
 	URL   string `json:"url"`
 }
 
-// IssueStatus defines the observed state of Issue
-type IssueStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+// IssueCondition defines the observed state of Issue
+type IssueCondition struct {
+	// INSERT ADDITIONAL CONDITION FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	State             string `json:"state,omitempty"`
 	ResolvedTimestamp string `json:"resolvedTimestamp,omitempty"`
@@ -59,14 +59,15 @@ type IssueStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=isu,shortName=iss
 
 // Issue is the Schema for the issues API
 type Issue struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   IssueSpec   `json:"spec,omitempty"`
-	Status IssueStatus `json:"status,omitempty"`
+	Spec      IssueSpec      `json:"spec,omitempty"`
+	Condition IssueCondition `json:"condition,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -104,30 +104,40 @@ func (r *IssueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 	}
 
-	// Sync status
-	statusChanged := false
-	// Check if status has changed at all
-	if stateLabel, exists := issue.Labels["state"]; exists && issue.Status.State != stateLabel {
-		oldState := issue.Status.State
-		issue.Status.State = stateLabel
-		statusChanged = true
+	// Sync Condition
+	// Label
+	if issue.Condition.State != "" {
+		if issue.Labels["state"] != issue.Condition.State {
+			issue.Labels["state"] = issue.Condition.State
+			needsUpdate = true
+		}
+	}
+
+	// Attribute
+	stateChanged := false
+	// Check if state label has changed at all since initial setting
+	// Update actual .Status value if it did
+	if stateLabel, exists := issue.Labels["state"]; exists && issue.Condition.State != stateLabel {
+		oldState := issue.Condition.State
+		issue.Condition.State = stateLabel
+		stateChanged = true
 
 		now := metav1.Now().Format(time.RFC3339)
 		if oldState == "resolved" && stateLabel != "resolved" {
 			// If changing from resolved to another state, clear the resolved timestamp
-			issue.Status.ResolvedTimestamp = ""
+			issue.Condition.ResolvedTimestamp = ""
 		}
 
-		// Always update detected timestamp if it's not set and we're changing status
-		if issue.Status.DetectedTimestamp == "" {
-			issue.Status.DetectedTimestamp = now
+		// Always update detected timestamp if it's not set and we're changing state
+		if issue.Condition.DetectedTimestamp == "" {
+			issue.Condition.DetectedTimestamp = now
 		}
 	}
 
-	if statusChanged {
-		logger.Info("Updating issue status", "name", issue.Name, "state", issue.Status.State)
+	if stateChanged {
+		logger.Info("Updating issue state", "name", issue.Name, "state", issue.Condition.State)
 		if err := r.Status().Update(ctx, issue); err != nil {
-			logger.Error(err, "Failed to update issue status")
+			logger.Error(err, "Failed to update issue condition")
 			return ctrl.Result{}, err
 		}
 	}
