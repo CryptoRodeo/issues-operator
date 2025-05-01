@@ -3,36 +3,30 @@
 :construction: Work In Progress :construction:
 
 ## Description
-This is the Kubernetes Issue Operator - a handy tool we're building to help you report problems in your K8s clusters using an Issue CRD.
+This is the Kubernetes Issue Operator - a tool we're building to help you report problems in your K8s clusters using an Issue CRD.
 
 ## Basic Idea
-This is a simple way to track all sorts of cluster issues in one place.
+This is a simple way to track all sorts of cluster issues in one place:
+```bash
+kubectl get issues -A
+NAMESPACE    NAME                                AGE
+team-alpha   database-connection-timeout         6m44s
+team-alpha   dependency-update-needed-frontend   6m44s
+team-alpha   failed-build-frontend               6m44s
+team-alpha   failed-test-api                     6m44s
+team-alpha   test-flaky-mobile                   6m44s
+team-beta    outdated-dependency-database        6m44s
+team-beta    release-failed-production           6m44s
+team-beta    resource-quota-exceeded             6m44s
+team-delta   failed-pipeline-run                 6m44s
+team-delta   permission-config-incorrect         6m44s
+team-gamma   build-warning-logging               6m44s
+team-gamma   pipeline-outdated                   6m44s
+
+```
+
 You can create Issues using monitoring or external services and view those issues in the cluster.
 Those same monitoring systems or external systems can update these issue CRDs.
-
-### Filtering
-The metadata from the issue will get appended to the Issue CRD labels, allowing you to group and filter issues.
-
-For example, say we want all the issues for an application:
-```bash
-kubectl get issues -l 'applicationName=someApp'
-```
-
-now let's filter all issues for a component in that application:
-```bash
-kubectl get issues -l 'applicationName=someApp,componentName=someComponent
-```
-
-now lets get all build issues for a component in that application:
-```bash
-kubectl get issues -l 'applicationName=someApp,componentName=someComponent,issueType=build'
-```
-
-### Grouping
-Get me all the issues related to Components in an Application:
-```bash
-kubectl get issues -l 'applicationName=someApp,resourceType=component'
-```
 
 ## Common Use Cases
 The Issue Operator can generate and update issues on many common Kubernetes problems, including:
@@ -47,6 +41,154 @@ The Issue Operator can generate and update issues on many common Kubernetes prob
 - **API Deprecations**: Get warned about using deprecated Kubernetes APIs
 - **Node Health Issues**: Monitor node conditions like disk pressure or memory pressure
 - **Security Policy Violations**: Detect when workloads violate cluster security policies
+
+
+## Usage
+### Basic commands
+```bash
+# List all issues
+kubectl get issues -A
+
+# List all issues with detailed output
+kubectl get issues -A -o wide
+
+# Get details of a specific issue
+kubectl describe issue failed-build-frontend -n team-alpha
+
+# Get the issue in YAML format
+kubectl get issue failed-build-frontend -n team-alpha -o yaml
+```
+### Filtering
+#### By Severity
+```bash
+# Get all critical issues across all namespaces
+kubectl get issues -A -l severity=critical
+
+# Get all major issues
+kubectl get issues -A -l severity=major
+
+# Get all minor and info issues
+kubectl get issues -A -l 'severity in (minor,info)'
+```
+
+#### Issue Type
+```bash
+# Get all build-related issues
+kubectl get issues -A -l issueType=build
+
+# Get all dependency and release issues
+kubectl get issues -A -l 'issueType in (dependency,release)'
+
+```
+#### Resource Type
+```bash
+# Get all component-level issues
+kubectl get issues -A -l resourceType=component
+
+# Get all application-level issues
+kubectl get issues -A -l resourceType=application
+
+# Get all workspace-level issues
+kubectl get issues -A -l resourceType=workspace
+
+```
+
+#### State
+```bash
+# Get all active issues
+kubectl get issues -A -l state=active
+
+# Get all resolved issues
+kubectl get issues -A -l state=resolved
+
+# Filter by Resource Name
+
+# Get all issues related to the frontend-ui component
+kubectl get issues -A -l resourceName=frontend-ui
+
+# Get all issues related to the e-commerce-app
+kubectl get issues -A -l resourceName=e-commerce-app
+```
+#### Namespace
+```bash
+# Get all issues in team-alpha namespace
+kubectl get issues -n team-alpha
+```
+
+#### Combining filters
+```bash
+# Get all critical active issues
+kubectl get issues -A -l 'severity=critical,state=active'
+
+# Get all build and test issues that are still active
+kubectl get issues -A -l 'issueType in (build,test),state=active'
+
+# Get all component-level issues in team-alpha namespace
+kubectl get issues -n team-alpha -l resourceType=component
+
+# Get all critical issues related to applications
+kubectl get issues -A -l 'severity=critical,resourceType=application'
+```
+
+#### Advanced filters
+```bash
+# Get issues NOT of a certain type (using set-based requirements)
+kubectl get issues -A -l 'issueType notin (build,test)'
+
+# Get all non-critical issues that are still active
+kubectl get issues -A -l 'severity!=critical,state=active'
+```
+
+### Grouping issues
+```bash
+# Group issues by severity and count them
+kubectl get issues -A --sort-by=.metadata.labels.severity -o custom-columns="SEVERITY:.metadata.labels.severity,NAMESPACE:.metadata.namespace,NAME:.metadata.name,STATE:.metadata.labels.state"
+
+# Group issues by type and show related details
+kubectl get issues -A --sort-by=.metadata.labels.issueType -o custom-columns="TYPE:.metadata.labels.issueType,SEVERITY:.metadata.labels.severity,NAME:.metadata.name,RESOURCE:.metadata.labels.resourceName,STATE:.metadata.labels.state"
+
+# Group by resource type with count
+kubectl get issues -A --sort-by=.metadata.labels.resourceType -o custom-columns="RESOURCE_TYPE:.metadata.labels.resourceType,NAME:.metadata.name,TYPE:.metadata.labels.issueType,SEVERITY:.metadata.labels.severity"
+```
+
+### Use field selectors for advanced filtering
+```bash
+# Find issues with specific text in the title (requires JSONPath)
+kubectl get issues -A -o jsonpath='{range .items[?(@.spec.title contains "failed")]}{.metadata.name}{"\n"}{end}'
+
+# Find issues detected after a specific date (requires JSONPath)
+kubectl get issues -A -o jsonpath='{range .items[?(@.status.detectedTimestamp > "2025-04-30")]}{.metadata.name}{"\t"}{.status.detectedTimestamp}{"\n"}{end}'
+```
+
+### Export filtered results
+```bash
+# Export all critical issues to a YAML file
+kubectl get issues -A -l severity=critical -o yaml > critical-issues.yaml
+
+# Export all active issues for a specific team to JSON
+kubectl get issues -n team-alpha -l state=active -o json > team-alpha-active-issues.json
+```
+
+### Watch issues in real time
+```bash
+# Watch for changes to critical issues
+kubectl get issues -A -l severity=critical --watch
+
+# Watch for issues being resolved
+kubectl get issues -A -l state=resolved --watch
+```
+
+### Automation examples
+```bash
+# Count issues by severity
+echo "Critical: $(kubectl get issues -A -l severity=critical --no-headers | wc -l)"
+echo "Major: $(kubectl get issues -A -l severity=major --no-headers | wc -l)"
+echo "Minor: $(kubectl get issues -A -l severity=minor --no-headers | wc -l)"
+echo "Info: $(kubectl get issues -A -l severity=info --no-headers | wc -l)"
+
+# Find related issues using jsonpath
+kubectl get issue database-connection-timeout -n team-alpha -o jsonpath='{.spec.relatedIssues}'
+```
 
 ## Getting Started
 
