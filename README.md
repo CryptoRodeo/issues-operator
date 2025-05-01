@@ -1,12 +1,8 @@
-# issues-operator
-
+# Issue Operator
 :construction: Work In Progress :construction:
 
-## Description
-This is the Kubernetes Issue Operator - a tool we're building to help you report problems in your K8s clusters using an Issue CRD.
+This tool offers a Kubernetes-native solution for tracking issues within your cluster.
 
-## Basic Idea
-This is a simple way to track all sorts of cluster issues in one place:
 ```bash
 kubectl get issues -A
 NAMESPACE    NAME                                AGE
@@ -25,8 +21,18 @@ team-gamma   pipeline-outdated                   6m44s
 
 ```
 
-You can create Issues using monitoring or external services and view those issues in the cluster.
-Those same monitoring systems or external systems can update these issue CRDs.
+## What This Tool Doesn't Do 
+This tool won't:
+- Watch for issues in real time
+- Generate issues automatically based on predefined rules
+- Close issues automatically for you
+
+You'll need to manage those tasks yourself in whatever way makes sense for your workflow.
+
+## What This Tool Will Do
+- Create a Kubernetes Issue Custom Resource Definition (CRD) that you can manage through the standard Kubernetes API and `kubectl`
+- Enable you to automate the creation, updating, and resolution of cluster issue records
+- Filter and group issues using labels derived from Issue spec attributes
 
 ## Common Use Cases
 The Issue Operator can generate and update issues on many common Kubernetes problems, including:
@@ -43,7 +49,7 @@ The Issue Operator can generate and update issues on many common Kubernetes prob
 - **Security Policy Violations**: Detect when workloads violate cluster security policies
 
 
-## Usage
+## Example Usage
 ### Basic commands
 ```bash
 # List all issues
