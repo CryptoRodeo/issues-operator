@@ -23,7 +23,7 @@ team-gamma   pipeline-outdated                   6m44s
 
 ## What This Tool Doesn't Do 
 This tool won't:
-- Watch for issues in real time
+- Monitor cluster resources for errors
 - Generate issues automatically based on predefined rules
 - Close issues automatically for you
 
