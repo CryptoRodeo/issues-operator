@@ -76,6 +76,8 @@ This will:
   * `password`: `Databas3Passw0rd`
   * `database`: `kubearchive`
 
+#### 4. Get the DB connection info
+Your secrets should 
 ---
 
 ## Set up KNative eventing
@@ -155,20 +157,10 @@ Follow these instructions: https://kubearchive.github.io/kubearchive/main/gettin
 
 ---
 
-### 1. Preparing the DB
-You can use this:
 
-```bash
-migrate \
-  -verbose -path integrations/database/postgresql/migrations/ \
-  -database "postgresql://kubearchive:Databas3Passw0rd@kubearchive-postgresql.kubearchive.svc.cluster.local:5432/kubearchive?sslmode=require" \
-  up
-```
+### 1. DB Secrets patch
 
----
-
-### 2. DB Secrets patch
-
+Ensure the URL and Password are correct.
 ```bash
 kubectl patch secret -n kubearchive kubearchive-database-credentials \
   --patch='{"stringData": {
@@ -176,6 +168,71 @@ kubectl patch secret -n kubearchive kubearchive-database-credentials \
   "DATABASE_PASSWORD": "Databas3Passw0rd" 
 }}'
 ```
+--- 
+
+### 2. Preparing the DB
+You can use a job to run the `migrate` tool against the PostgreSQL db.
+
+First, get the database connection info:
+```bash
+# URL
+kubectl get secret kubearchive-database-credentials -n kubearchive -o jsonpath='{.data.DATABASE_URL}' | base64 -d
+# Port
+kubectl get secret kubearchive-database-credentials -n kubearchive -o jsonpath='{.data.DATABASE_PORT}' | base64 -d
+# Username
+kubectl get secret kubearchive-database-credentials -n kubearchive -o jsonpath='{.data.DATABASE_USER}' | base64 -d
+# Password
+kubectl get secret kubearchive-database-credentials -n kubearchive -o jsonpath='{.data.DATABASE_PASSWORD}' | base64 -d
+
+```
+
+This should give you a connection string like the one below:
+```bash
+postgresql://kubearchive:Databas3Passw0rd@kubearchive-postgresql.kubearchive.svc.cluster.local:5432/kubearchive?sslmode=require
+```
+
+Then create a Job with the official `migrate/migrate` image (`db-migration-job.yaml`):
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration
+  namespace: kubearchive
+spec:
+  template:
+    spec:
+      containers:
+      - name: migrate
+        image: migrate/migrate:v4.15.2
+        command: ["sh", "-c"]
+        args:
+          - |
+            wget https://github.com/kubearchive/kubearchive/archive/refs/heads/main.zip &&
+            unzip main.zip &&
+            migrate \
+              -verbose \
+              -path kubearchive-main/integrations/database/postgresql/migrations \
+              -database "postgresql://kubearchive:Databas3Passw0rd@kubearchive-postgresql.kubearchive.svc.cluster.local:5432/kubearchive?sslmode=require" \
+              up
+      restartPolicy: Never
+  backoffLimit: 1
+```
+
+Apply it:
+```bash
+kubectl apply -f db-migration-job.yaml
+```
+
+Watch it run:
+```bash
+kbuectl logs job/db-migration -n kubearchive
+```
+
+Clean up:
+```bash
+kubectl delete job db-migration -n kubearchive
+```
+
 ---
 
 ### 3. Restart deployments
